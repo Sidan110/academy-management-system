@@ -1,0 +1,139 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}학생 상세{% endblock %}
+{% block page_title %}학생 상세{% endblock %}
+{% block page_description %}학생 기본 정보, 수강 수업, 진도 기록을 확인합니다.{% endblock %}
+
+{% block content %}
+<section class="profile-card">
+    <div class="profile-top">
+        <div class="avatar large">{{ student.name|slice:":1" }}</div>
+
+        <div class="profile-info">
+            <div class="info-grid">
+                <div>
+                    <label>학생명</label>
+                    <div class="info-box">{{ student.name }}</div>
+                </div>
+                <div>
+                    <label>학부모 H.P</label>
+                    <div class="info-box">{{ student.parent_phone|default:"-" }}</div>
+                </div>
+                <div>
+                    <label>학교</label>
+                    <div class="info-box">{{ student.school|default:"-" }}</div>
+                </div>
+                <div>
+                    <label>학년</label>
+                    <div class="info-box">{{ student.grade|default:"-" }}</div>
+                </div>
+                <div class="wide">
+                    <label>주소</label>
+                    <div class="info-box">{{ student.address|default:"-" }}</div>
+                </div>
+                <div class="wide">
+                    <label>메모</label>
+                    <div class="info-box memo">{{ student.memo|default:"메모 없음"|linebreaksbr }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-actions">
+        <a class="btn primary" href="{% url 'student_update' student.pk %}">학생 정보 수정</a>
+        <a class="btn danger" href="{% url 'student_delete' student.pk %}">학생 삭제</a>
+        <a class="btn" href="{% url 'student_list' %}">목록으로</a>
+    </div>
+</section>
+
+<div class="two-column">
+    <section class="card">
+        <div class="section-header">
+            <h2>수강 중인 수업</h2>
+            <a href="{% url 'enrollment_create' %}">수강 등록</a>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>수업명</th>
+                        <th>담당</th>
+                        <th>요일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td>
+                            <a class="table-link" href="{% url 'classroom_detail' enrollment.classroom.pk %}">
+                                {{ enrollment.classroom.name }}
+                            </a>
+                        </td>
+                        <td>{{ enrollment.classroom.teacher }}</td>
+                        <td>{{ enrollment.classroom.day_of_week }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="empty">수강 중인 수업이 없습니다.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="section-header">
+            <h2>최근 진도 기록</h2>
+            <a href="{% url 'progress_create' %}">진도 작성</a>
+        </div>
+
+        <div class="list-stack">
+            {% for record in progress_records %}
+            <div class="progress-item">
+                <strong>{{ record.date }} · {{ record.topic }}</strong>
+                <p>{{ record.classroom.name }} / 이해도: {{ record.get_understanding_display }}</p>
+                <p>{{ record.memo|default:"메모 없음" }}</p>
+            </div>
+            {% empty %}
+            <p class="empty">진도 기록이 없습니다.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<section class="card">
+    <div class="section-header">
+        <h2>최근 출석 기록</h2>
+        <a href="{% url 'attendance_select' %}">출석 체크</a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>수업반</th>
+                    <th>상태</th>
+                    <th>비고</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                <tr>
+                    <td>{{ attendance.date }}</td>
+                    <td>{{ attendance.classroom.name }}</td>
+                    <td><span class="status-badge {{ attendance.status }}">{{ attendance.get_status_display }}</span></td>
+                    <td>{{ attendance.note|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty">출석 기록이 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

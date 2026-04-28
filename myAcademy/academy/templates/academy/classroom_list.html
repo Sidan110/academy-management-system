@@ -1,0 +1,30 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}수업반 관리{% endblock %}
+{% block page_title %}수업반 관리{% endblock %}
+{% block page_description %}학원에서 운영하는 수업반을 관리합니다.{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="section-header">
+        <h2>수업반 목록</h2>
+        <a class="btn primary" href="{% url 'classroom_create' %}">수업반 등록</a>
+    </div>
+
+    <div class="class-grid">
+        {% for classroom in classrooms %}
+        <a class="class-card" href="{% url 'classroom_detail' classroom.pk %}">
+            <div class="class-card-top">
+                <h3>{{ classroom.name }}</h3>
+                <span>{{ classroom.student_count }}명</span>
+            </div>
+            <p>담당: {{ classroom.teacher }}</p>
+            <p>{{ classroom.day_of_week }} / {{ classroom.start_time|time:"H:i" }} ~ {{ classroom.end_time|time:"H:i" }}</p>
+            <p>강의실: {{ classroom.room|default:"-" }}</p>
+        </a>
+        {% empty %}
+        <p class="empty">등록된 수업반이 없습니다.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

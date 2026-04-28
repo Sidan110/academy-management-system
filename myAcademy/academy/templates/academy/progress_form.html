@@ -1,0 +1,30 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}진도 작성{% endblock %}
+{% block page_title %}진도 작성{% endblock %}
+{% block page_description %}수업 내용, 숙제, 이해도, 메모를 기록합니다.{% endblock %}
+
+{% block content %}
+<section class="card form-card">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'memo' or field.name == 'topic' or field.name == 'homework' %}wide{% endif %}">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                <p class="field-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button class="btn primary big" type="submit">진도 저장하기</button>
+            <a class="btn" href="{% url 'progress_list' %}">목록으로</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}수강 등록{% endblock %}
+{% block page_title %}수강 등록{% endblock %}
+{% block page_description %}학생을 수업반에 배정합니다.{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="section-header">
+        <h2>수강 등록 목록</h2>
+        <a class="btn primary" href="{% url 'enrollment_create' %}">새 수강 등록</a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>학생</th>
+                    <th>수업반</th>
+                    <th>등록일</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td>
+                        <a class="table-link" href="{% url 'student_detail' enrollment.student.pk %}">
+                            {{ enrollment.student.name }}
+                        </a>
+                    </td>
+                    <td>
+                        <a class="table-link" href="{% url 'classroom_detail' enrollment.classroom.pk %}">
+                            {{ enrollment.classroom.name }}
+                        </a>
+                    </td>
+                    <td>{{ enrollment.enrolled_at }}</td>
+                    <td>
+                        <form method="post" action="{% url 'enrollment_delete' enrollment.pk %}" class="inline-form js-confirm">
+                            {% csrf_token %}
+                            <button class="btn danger small" type="submit">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty">수강 등록 정보가 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}출석 체크{% endblock %}
+{% block page_title %}출석 체크{% endblock %}
+{% block page_description %}학생별 출석, 결석, 지각, 조퇴, 보강 상태를 저장합니다.{% endblock %}
+
+{% block content %}
+<section class="attendance-phone">
+    <div class="phone-header">
+        <a href="{% url 'attendance_select' %}">←</a>
+        <strong>출석 체크</strong>
+    </div>
+
+    <div class="attendance-summary">
+        <h2>{{ selected_date|date:"Y-m-d" }}</h2>
+        <p>{{ classroom.name }}</p>
+
+        <div class="summary-grid">
+            <div>
+                <span>출석</span>
+                <strong>{{ counts.present }}</strong>
+            </div>
+            <div>
+                <span>결석</span>
+                <strong>{{ counts.absent }}</strong>
+            </div>
+            <div>
+                <span>지각</span>
+                <strong>{{ counts.late }}</strong>
+            </div>
+            <div>
+                <span>조퇴</span>
+                <strong>{{ counts.early }}</strong>
+            </div>
+            <div>
+                <span>보강</span>
+                <strong>{{ counts.makeup }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+
+        <div class="attendance-table">
+            <div class="attendance-row head">
+                <div>학생</div>
+                <div>출결상태</div>
+                <div>비고</div>
+            </div>
+
+            {% for row in rows %}
+            <div class="attendance-row">
+                <div class="student-name">
+                    <a href="{% url 'student_detail' row.student.pk %}">{{ row.student.name }}</a>
+                </div>
+
+                <div class="status-options">
+                    <label class="status-pill present">
+                        <input type="radio" name="status_{{ row.student.id }}" value="present" {% if row.status == 'present' %}checked{% endif %}>
+                        출석
+                    </label>
+                    <label class="status-pill absent">
+                        <input type="radio" name="status_{{ row.student.id }}" value="absent" {% if row.status == 'absent' %}checked{% endif %}>
+                        결석
+                    </label>
+                    <label class="status-pill late">
+                        <input type="radio" name="status_{{ row.student.id }}" value="late" {% if row.status == 'late' %}checked{% endif %}>
+                        지각
+                    </label>
+                    <label class="status-pill early">
+                        <input type="radio" name="status_{{ row.student.id }}" value="early" {% if row.status == 'early' %}checked{% endif %}>
+                        조퇴
+                    </label>
+                    <label class="status-pill makeup">
+                        <input type="radio" name="status_{{ row.student.id }}" value="makeup" {% if row.status == 'makeup' %}checked{% endif %}>
+                        보강
+                    </label>
+                </div>
+
+                <div>
+                    <input class="note-input" type="text" name="note_{{ row.student.id }}" value="{{ row.note }}" placeholder="비고">
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty attendance-empty">
+                이 수업반에 배정된 학생이 없습니다. 먼저 수강 등록을 해주세요.
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="attendance-footer">
+            <span>총원 {{ total_count }}명</span>
+            <button class="btn primary" type="submit">출석 저장</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_description %}학생의 기본 정보와 학부모 연락처를 입력합니다.{% endblock %}
+
+{% block content %}
+<section class="card form-card">
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="form-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'address' or field.name == 'memo' %}wide{% endif %}">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small>{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <p class="field-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button class="btn primary big" type="submit">{{ button_text }}</button>
+            <a class="btn" href="{% url 'student_list' %}">목록으로</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

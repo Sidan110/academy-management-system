@@ -1,0 +1,59 @@
+{% extends 'academy/base.html' %}
+
+{% block title %}진도 기록{% endblock %}
+{% block page_title %}진도 기록{% endblock %}
+{% block page_description %}학생별 수업 진도와 숙제를 기록합니다.{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="section-header">
+        <h2>진도 기록 목록</h2>
+        <a class="btn primary" href="{% url 'progress_create' %}">진도 작성</a>
+    </div>
+
+    <form class="search-bar" method="get">
+        <input type="text" name="q" value="{{ q }}" placeholder="학생명, 수업명, 진도 검색">
+        <button class="btn" type="submit">검색</button>
+    </form>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>학생</th>
+                    <th>수업반</th>
+                    <th>진도</th>
+                    <th>이해도</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.date }}</td>
+                    <td>
+                        <a class="table-link" href="{% url 'student_detail' record.student.pk %}">
+                            {{ record.student.name }}
+                        </a>
+                    </td>
+                    <td>{{ record.classroom.name }}</td>
+                    <td>{{ record.topic }}</td>
+                    <td>{{ record.get_understanding_display }}</td>
+                    <td>
+                        <form method="post" action="{% url 'progress_delete' record.pk %}" class="inline-form js-confirm">
+                            {% csrf_token %}
+                            <button class="btn danger small" type="submit">삭제</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty">진도 기록이 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
