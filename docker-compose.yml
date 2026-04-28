@@ -28,8 +28,6 @@ services:
     volumes:
       - academy_static:/usr/src/app/staticfiles
     restart: always
-    ports:
-      - "8000:8000"
 
   nginx_academy:
     build: ./myNginx
