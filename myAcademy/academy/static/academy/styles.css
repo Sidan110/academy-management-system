@@ -1495,3 +1495,90 @@ textarea.form-control {
         font-size: 28px;
     }
 }
+
+/* ===== Payment and public check-in UI ===== */
+.payment-stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.status-badge.unpaid {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.status-badge.partial {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+.status-badge.paid {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge.overdue {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.strong-money {
+    color: #1d4ed8;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.danger-money {
+    color: #dc2626;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.checkin-result {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.checkin-result h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+}
+
+.checkin-result p {
+    color: #64748b;
+    font-weight: 700;
+}
+
+.checkin-class-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.checkin-class-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.checkin-class-card strong {
+    display: block;
+    font-size: 18px;
+}
+
+.checkin-class-card span {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.public-reserve-box {
+    display: grid;
+    gap: 10px;
+}

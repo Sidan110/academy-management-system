@@ -1,5 +1,14 @@
 from django import forms
-from .models import Student, ClassRoom, Enrollment, ProgressRecord, ConsultationReservation
+from .models import (
+    Student,
+    ClassRoom,
+    Enrollment,
+    ProgressRecord,
+    ConsultationReservation,
+    NotificationLog,
+    PaymentInvoice,
+)
+
 
 class BaseStyledForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -107,7 +116,6 @@ class ConsultationReservationForm(BaseStyledForm):
             "result_memo": forms.Textarea(attrs={"rows": 4}),
         }
 
-from .models import NotificationLog
 
 class PublicConsultationForm(BaseStyledForm):
     class Meta:
@@ -143,3 +151,45 @@ class NotificationLogForm(BaseStyledForm):
         widgets = {
             "message": forms.Textarea(attrs={"rows": 4}),
         }
+
+class PaymentInvoiceForm(BaseStyledForm):
+    class Meta:
+        model = PaymentInvoice
+        fields = [
+            "student",
+            "billing_month",
+            "tuition_fee",
+            "book_fee",
+            "shuttle_fee",
+            "discount_amount",
+            "paid_amount",
+            "due_date",
+            "paid_date",
+            "status",
+            "memo",
+        ]
+        widgets = {
+            "billing_month": forms.TextInput(attrs={"placeholder": "예: 2026-04"}),
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "paid_date": forms.DateInput(attrs={"type": "date"}),
+            "memo": forms.Textarea(attrs={"rows": 4}),
+        }
+
+
+class StudentCheckInForm(forms.Form):
+    student_name = forms.CharField(
+        label="학생 이름",
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "학생 이름을 입력하세요"
+        })
+    )
+    phone_last4 = forms.CharField(
+        label="전화번호 뒤 4자리",
+        max_length=4,
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "예: 1234"
+        })
+    )

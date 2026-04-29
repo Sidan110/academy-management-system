@@ -1,0 +1,26 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>출석 완료</title>
+    <link rel="stylesheet" href="{% static 'academy/styles.css' %}">
+</head>
+<body class="auth-body">
+    <main class="auth-card">
+        <div class="login-logo">
+            <div class="login-mark success">✓</div>
+            <h1>출석 처리 완료</h1>
+        </div>
+
+        <p class="done-text">
+            {{ today }}<br>
+            {{ student.name }} 학생의 <strong>{{ classroom.name }}</strong> 수업 출석이 처리되었습니다.
+        </p>
+
+        <a class="btn primary full" href="{% url 'public_checkin' %}">다른 학생 출석 체크</a>
+        <a class="btn outline full" href="{% url 'login' %}">처음 화면으로</a>
+    </main>
+</body>
+</html>

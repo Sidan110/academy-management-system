@@ -1,0 +1,87 @@
+
+{% extends 'academy/base.html' %}
+
+{% block title %}수납 상세{% endblock %}
+{% block page_title %}수납 상세{% endblock %}
+{% block page_description %}학생별 청구 금액과 납부 상태를 확인합니다.{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="section-header">
+        <h2>{{ invoice.student.name }} - {{ invoice.billing_month }} 수납</h2>
+        <span class="status-badge {{ invoice.status }}">{{ invoice.get_status_display }}</span>
+    </div>
+
+    <div class="info-grid">
+        <div>
+            <label>학생</label>
+            <div class="info-box">{{ invoice.student.name }}</div>
+        </div>
+        <div>
+            <label>청구월</label>
+            <div class="info-box">{{ invoice.billing_month }}</div>
+        </div>
+        <div>
+            <label>수업료</label>
+            <div class="info-box">{{ invoice.tuition_fee }}원</div>
+        </div>
+        <div>
+            <label>교재비</label>
+            <div class="info-box">{{ invoice.book_fee }}원</div>
+        </div>
+        <div>
+            <label>차량비</label>
+            <div class="info-box">{{ invoice.shuttle_fee }}원</div>
+        </div>
+        <div>
+            <label>할인 금액</label>
+            <div class="info-box">{{ invoice.discount_amount }}원</div>
+        </div>
+        <div>
+            <label>총 청구액</label>
+            <div class="info-box strong-money">{{ invoice.total_amount }}원</div>
+        </div>
+        <div>
+            <label>납부 금액</label>
+            <div class="info-box">{{ invoice.paid_amount }}원</div>
+        </div>
+        <div>
+            <label>미납 금액</label>
+            <div class="info-box danger-money">{{ invoice.remaining_amount }}원</div>
+        </div>
+        <div>
+            <label>납부 예정일</label>
+            <div class="info-box">{{ invoice.due_date|default:"-" }}</div>
+        </div>
+        <div>
+            <label>납부일</label>
+            <div class="info-box">{{ invoice.paid_date|default:"-" }}</div>
+        </div>
+        <div class="wide">
+            <label>메모</label>
+            <div class="info-box memo">{{ invoice.memo|default:"메모 없음"|linebreaksbr }}</div>
+        </div>
+    </div>
+
+    <div class="form-actions wrap">
+        <a class="btn primary" href="{% url 'payment_update' invoice.pk %}">수정</a>
+
+        <form method="post" action="{% url 'payment_mark_paid' invoice.pk %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn primary" type="submit">완납 처리</button>
+        </form>
+
+        <form method="post" action="{% url 'payment_mark_overdue' invoice.pk %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn danger" type="submit">연체 처리</button>
+        </form>
+
+        <form method="post" action="{% url 'payment_delete' invoice.pk %}" class="inline-form js-confirm">
+            {% csrf_token %}
+            <button class="btn danger" type="submit">삭제</button>
+        </form>
+
+        <a class="btn" href="{% url 'payment_list' %}">목록으로</a>
+    </div>
+</section>
+{% endblock %}

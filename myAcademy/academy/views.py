@@ -781,3 +781,208 @@ def consultation_set_status(request, pk, status):
 
     messages.success(request, "상담 상태가 변경되었고 알림 발송 로그가 생성되었습니다.")
     return redirect("consultation_detail", pk=consultation.pk)
+
+def make_payment_notification(invoice, category="payment_invoice"):
+    phone = invoice.student.parent_phone or invoice.student.phone or "-"
+    if category == "payment_overdue":
+        message = f"[EduManager] {invoice.student.name} 학생의 {invoice.billing_month} 수강료가 미납 상태입니다. 미납 금액: {invoice.remaining_amount}원"
+    else:
+        message = f"[EduManager] {invoice.student.name} 학생의 {invoice.billing_month} 수강료가 청구되었습니다. 청구 금액: {invoice.total_amount}원"
+
+    return NotificationLog.objects.create(
+        notification_type="sms",
+        category=category,
+        recipient_name=invoice.student.name,
+        phone=phone,
+        message=message,
+        status="waiting",
+    )
+
+
+def payment_list(request):
+    status = request.GET.get("status", "").strip()
+    q = request.GET.get("q", "").strip()
+    month = request.GET.get("month", "").strip()
+
+    invoices = PaymentInvoice.objects.select_related("student").all()
+
+    if status:
+        invoices = invoices.filter(status=status)
+
+    if q:
+        invoices = invoices.filter(
+            Q(student__name__icontains=q) |
+            Q(student__school__icontains=q) |
+            Q(student__grade__icontains=q) |
+            Q(billing_month__icontains=q)
+        )
+
+    if month:
+        invoices = invoices.filter(billing_month=month)
+
+    all_invoices = PaymentInvoice.objects.select_related("student").all()
+    unpaid_invoices = [item for item in all_invoices if item.status in ["unpaid", "partial", "overdue"]]
+
+    stats = {
+        "total_count": all_invoices.count(),
+        "unpaid_count": PaymentInvoice.objects.filter(status__in=["unpaid", "partial", "overdue"]).count(),
+        "paid_count": PaymentInvoice.objects.filter(status="paid").count(),
+        "unpaid_amount": sum(item.remaining_amount for item in unpaid_invoices),
+    }
+
+    return render(request, "academy/payment_list.html", {
+        "invoices": invoices,
+        "status": status,
+        "q": q,
+        "month": month,
+        "stats": stats,
+    })
+
+
+def payment_create(request):
+    if request.method == "POST":
+        form = PaymentInvoiceForm(request.POST)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            if invoice.status == "paid" and not invoice.paid_date:
+                invoice.paid_date = timezone.localdate()
+                invoice.paid_amount = invoice.total_amount
+            invoice.save()
+
+            make_payment_notification(invoice, "payment_invoice")
+            messages.success(request, "수납 청구서가 생성되었고 알림 발송 로그가 등록되었습니다.")
+            return redirect("payment_detail", pk=invoice.pk)
+    else:
+        form = PaymentInvoiceForm()
+
+    return render(request, "academy/payment_form.html", {
+        "form": form,
+        "title": "수납 청구서 생성",
+        "button_text": "청구서 저장하기",
+    })
+
+
+def payment_detail(request, pk):
+    invoice = get_object_or_404(PaymentInvoice.objects.select_related("student"), pk=pk)
+
+    return render(request, "academy/payment_detail.html", {
+        "invoice": invoice,
+    })
+
+
+def payment_update(request, pk):
+    invoice = get_object_or_404(PaymentInvoice, pk=pk)
+
+    if request.method == "POST":
+        form = PaymentInvoiceForm(request.POST, instance=invoice)
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            if invoice.status == "paid" and not invoice.paid_date:
+                invoice.paid_date = timezone.localdate()
+            invoice.save()
+            messages.success(request, "수납 정보가 수정되었습니다.")
+            return redirect("payment_detail", pk=invoice.pk)
+    else:
+        form = PaymentInvoiceForm(instance=invoice)
+
+    return render(request, "academy/payment_form.html", {
+        "form": form,
+        "title": "수납 정보 수정",
+        "button_text": "수정하기",
+    })
+
+
+@require_POST
+def payment_mark_paid(request, pk):
+    invoice = get_object_or_404(PaymentInvoice, pk=pk)
+    invoice.status = "paid"
+    invoice.paid_amount = invoice.total_amount
+    invoice.paid_date = timezone.localdate()
+    invoice.save(update_fields=["status", "paid_amount", "paid_date", "updated_at"])
+
+    NotificationLog.objects.create(
+        notification_type="sms",
+        category="payment_invoice",
+        recipient_name=invoice.student.name,
+        phone=invoice.student.parent_phone or invoice.student.phone or "-",
+        message=f"[EduManager] {invoice.student.name} 학생의 {invoice.billing_month} 수강료 납부가 완료되었습니다.",
+        status="waiting",
+    )
+
+    messages.success(request, "완납 처리되었고 납부 완료 알림 로그가 생성되었습니다.")
+    return redirect("payment_detail", pk=invoice.pk)
+
+
+@require_POST
+def payment_mark_overdue(request, pk):
+    invoice = get_object_or_404(PaymentInvoice, pk=pk)
+    invoice.status = "overdue"
+    invoice.save(update_fields=["status", "updated_at"])
+
+    make_payment_notification(invoice, "payment_overdue")
+    messages.success(request, "연체 처리되었고 미납 안내 알림 로그가 생성되었습니다.")
+    return redirect("payment_detail", pk=invoice.pk)
+
+
+@require_POST
+def payment_delete(request, pk):
+    invoice = get_object_or_404(PaymentInvoice, pk=pk)
+    invoice.delete()
+    messages.success(request, "수납 청구서가 삭제되었습니다.")
+    return redirect("payment_list")
+
+
+def public_checkin(request):
+    form = StudentCheckInForm(request.POST or None)
+    matched_students = []
+    selected_student = None
+    enrollments = []
+    today = timezone.localdate()
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "lookup" and form.is_valid():
+            name = form.cleaned_data["student_name"].strip()
+            last4 = form.cleaned_data["phone_last4"].strip()
+
+            matched_students = Student.objects.filter(
+                Q(name__icontains=name),
+                Q(phone__endswith=last4) | Q(parent_phone__endswith=last4)
+            ).prefetch_related("enrollments__classroom")
+
+            if matched_students.count() == 1:
+                selected_student = matched_students.first()
+                enrollments = Enrollment.objects.filter(
+                    student=selected_student
+                ).select_related("classroom")
+
+        elif action == "checkin":
+            student_id = request.POST.get("student_id")
+            classroom_id = request.POST.get("classroom_id")
+            student = get_object_or_404(Student, pk=student_id)
+            classroom = get_object_or_404(ClassRoom, pk=classroom_id)
+
+            Attendance.objects.update_or_create(
+                student=student,
+                classroom=classroom,
+                date=today,
+                defaults={
+                    "status": "present",
+                    "note": "학생 직접 출석 체크",
+                }
+            )
+
+            return render(request, "academy/public_checkin_done.html", {
+                "student": student,
+                "classroom": classroom,
+                "today": today,
+            })
+
+    return render(request, "academy/public_checkin.html", {
+        "form": form,
+        "matched_students": matched_students,
+        "selected_student": selected_student,
+        "enrollments": enrollments,
+        "today": today,
+    })

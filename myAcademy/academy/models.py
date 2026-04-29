@@ -128,6 +128,8 @@ class NotificationLog(models.Model):
         ("consultation_completed", "상담 완료"),
         ("consultation_canceled", "상담 취소"),
         ("attendance_notice", "출석 안내"),
+        ("payment_invoice", "수강료 청구 안내"),
+        ("payment_overdue", "미납 안내"),
     ]
 
     STATUS_CHOICES = [
@@ -173,3 +175,45 @@ class NotificationLog(models.Model):
 
     def __str__(self):
         return f"{self.recipient_name} - {self.get_category_display()}"
+
+class PaymentInvoice(models.Model):
+    STATUS_CHOICES = [
+        ("unpaid", "미납"),
+        ("partial", "부분납"),
+        ("paid", "완납"),
+        ("overdue", "연체"),
+    ]
+
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="payment_invoices",
+        verbose_name="학생"
+    )
+    billing_month = models.CharField("청구월", max_length=7, help_text="예: 2026-04")
+    tuition_fee = models.DecimalField("수업료", max_digits=10, decimal_places=0, default=0)
+    book_fee = models.DecimalField("교재비", max_digits=10, decimal_places=0, default=0)
+    shuttle_fee = models.DecimalField("차량비", max_digits=10, decimal_places=0, default=0)
+    discount_amount = models.DecimalField("할인 금액", max_digits=10, decimal_places=0, default=0)
+    paid_amount = models.DecimalField("납부 금액", max_digits=10, decimal_places=0, default=0)
+    due_date = models.DateField("납부 예정일", null=True, blank=True)
+    paid_date = models.DateField("납부일", null=True, blank=True)
+    status = models.CharField("납부 상태", max_length=20, choices=STATUS_CHOICES, default="unpaid")
+    memo = models.TextField("메모", blank=True)
+    created_at = models.DateTimeField("생성일", auto_now_add=True)
+    updated_at = models.DateTimeField("수정일", auto_now=True)
+
+    class Meta:
+        ordering = ["-billing_month", "student__name"]
+
+    @property
+    def total_amount(self):
+        return self.tuition_fee + self.book_fee + self.shuttle_fee - self.discount_amount
+
+    @property
+    def remaining_amount(self):
+        remaining = self.total_amount - self.paid_amount
+        return remaining if remaining > 0 else 0
+
+    def __str__(self):
+        return f"{self.student.name} {self.billing_month} 수강료"

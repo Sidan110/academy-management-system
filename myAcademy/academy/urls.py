@@ -44,4 +44,14 @@ urlpatterns = [
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:pk>/sent/', views.notification_mark_sent, name='notification_mark_sent'),
     path('notifications/<int:pk>/failed/', views.notification_mark_failed, name='notification_mark_failed'),
+
+    path('payments/', views.payment_list, name='payment_list'),
+    path('payments/new/', views.payment_create, name='payment_create'),
+    path('payments/<int:pk>/', views.payment_detail, name='payment_detail'),
+    path('payments/<int:pk>/edit/', views.payment_update, name='payment_update'),
+    path('payments/<int:pk>/paid/', views.payment_mark_paid, name='payment_mark_paid'),
+    path('payments/<int:pk>/overdue/', views.payment_mark_overdue, name='payment_mark_overdue'),
+    path('payments/<int:pk>/delete/', views.payment_delete, name='payment_delete'),
+
+    path('checkin/', views.public_checkin, name='public_checkin'),
 ]

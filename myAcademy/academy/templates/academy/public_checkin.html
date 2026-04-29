@@ -1,0 +1,70 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>학생 출석 체크</title>
+    <link rel="stylesheet" href="{% static 'academy/styles.css' %}">
+</head>
+<body class="auth-body">
+    <main class="public-card">
+        <div class="login-logo">
+            <div class="login-mark">E</div>
+            <h1>학생 출석 체크</h1>
+        </div>
+
+        <form method="post" class="checkin-search-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="lookup">
+
+            <div class="form-grid">
+                {% for field in form %}
+                <div class="form-group">
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button class="btn primary big" type="submit">수업 조회하기</button>
+                <a class="btn" href="{% url 'login' %}">처음 화면으로</a>
+            </div>
+        </form>
+
+        {% if selected_student %}
+        <section class="checkin-result">
+            <h2>{{ selected_student.name }} 학생의 수강 수업</h2>
+            <p>{{ today }} 기준 출석할 수업을 선택하세요.</p>
+
+            <div class="checkin-class-list">
+                {% for enrollment in enrollments %}
+                <form method="post" class="checkin-class-card">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="checkin">
+                    <input type="hidden" name="student_id" value="{{ selected_student.id }}">
+                    <input type="hidden" name="classroom_id" value="{{ enrollment.classroom.id }}">
+
+                    <div>
+                        <strong>{{ enrollment.classroom.name }}</strong>
+                        <span>{{ enrollment.classroom.teacher }} · {{ enrollment.classroom.day_of_week }} · {{ enrollment.classroom.start_time|time:"H:i" }}</span>
+                    </div>
+                    <button class="btn primary" type="submit">출석 체크</button>
+                </form>
+                {% empty %}
+                <p class="empty-state">배정된 수업이 없습니다.</p>
+                {% endfor %}
+            </div>
+        </section>
+        {% elif matched_students %}
+        <section class="checkin-result">
+            <p class="empty-state">동명이인이 있습니다. 이름을 더 정확히 입력하거나 학원 데스크에 문의해 주세요.</p>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

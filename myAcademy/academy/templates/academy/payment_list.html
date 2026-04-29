@@ -1,0 +1,118 @@
+
+{% extends 'academy/base.html' %}
+
+{% block title %}수납 관리{% endblock %}
+{% block page_title %}수납 관리{% endblock %}
+{% block page_description %}수강료 청구, 납부 상태, 미납 현황을 관리합니다.{% endblock %}
+
+{% block content %}
+<section class="service-stat-grid payment-stat-grid">
+    <article class="service-stat-card">
+        <div class="stat-icon blue">🧾</div>
+        <div>
+            <span>전체 청구서</span>
+            <strong>{{ stats.total_count }}</strong>
+            <p>등록된 수납 건</p>
+        </div>
+    </article>
+    <article class="service-stat-card">
+        <div class="stat-icon orange">⚠</div>
+        <div>
+            <span>미납/연체</span>
+            <strong class="orange-text">{{ stats.unpaid_count }}</strong>
+            <p>확인 필요</p>
+        </div>
+    </article>
+    <article class="service-stat-card">
+        <div class="stat-icon green">✅</div>
+        <div>
+            <span>완납</span>
+            <strong>{{ stats.paid_count }}</strong>
+            <p>납부 완료</p>
+        </div>
+    </article>
+    <article class="service-stat-card">
+        <div class="stat-icon purple">₩</div>
+        <div>
+            <span>미납 금액</span>
+            <strong>{{ stats.unpaid_amount }}</strong>
+            <p>남은 납부액</p>
+        </div>
+    </article>
+</section>
+
+<section class="card">
+    <div class="section-header">
+        <h2>수납 청구서 목록</h2>
+        <a class="btn primary" href="{% url 'payment_create' %}">청구서 생성</a>
+    </div>
+
+    <form class="filter-panel" method="get">
+        <div class="filter-grid three">
+            <div class="form-group">
+                <label>검색</label>
+                <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="학생명, 학교, 학년, 청구월">
+            </div>
+            <div class="form-group">
+                <label>청구월</label>
+                <input class="form-control" type="text" name="month" value="{{ month }}" placeholder="예: 2026-04">
+            </div>
+            <div class="form-group">
+                <label>상태</label>
+                <select class="form-control" name="status">
+                    <option value="">전체</option>
+                    <option value="unpaid" {% if status == "unpaid" %}selected{% endif %}>미납</option>
+                    <option value="partial" {% if status == "partial" %}selected{% endif %}>부분납</option>
+                    <option value="paid" {% if status == "paid" %}selected{% endif %}>완납</option>
+                    <option value="overdue" {% if status == "overdue" %}selected{% endif %}>연체</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-actions compact">
+            <button class="btn primary" type="submit">조회</button>
+            <a class="btn" href="{% url 'payment_list' %}">초기화</a>
+        </div>
+    </form>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>청구월</th>
+                    <th>학생</th>
+                    <th>학교/학년</th>
+                    <th>총 청구액</th>
+                    <th>납부액</th>
+                    <th>미납액</th>
+                    <th>납부 예정일</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoices %}
+                <tr>
+                    <td>{{ item.billing_month }}</td>
+                    <td>
+                        <a class="table-link" href="{% url 'payment_detail' item.pk %}">
+                            {{ item.student.name }}
+                        </a>
+                    </td>
+                    <td>{{ item.student.school|default:"-" }} / {{ item.student.grade|default:"-" }}</td>
+                    <td>{{ item.total_amount }}원</td>
+                    <td>{{ item.paid_amount }}원</td>
+                    <td>{{ item.remaining_amount }}원</td>
+                    <td>{{ item.due_date|default:"-" }}</td>
+                    <td><span class="status-badge {{ item.status }}">{{ item.get_status_display }}</span></td>
+                    <td><a class="btn small" href="{% url 'payment_detail' item.pk %}">상세</a></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="empty">수납 청구서가 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

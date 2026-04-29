@@ -5,6 +5,7 @@ from django.shortcuts import redirect, render
 PUBLIC_PREFIXES = (
     "/login/",
     "/apply/",
+    "/checkin/",
     "/static/",
     "/admin/",
 )
@@ -13,6 +14,7 @@ OWNER_ONLY_PREFIXES = (
     "/consultations/",
     "/enrollments/",
     "/notifications/",
+    "/payments/",
 )
 
 OWNER_ONLY_PATTERNS = (
