@@ -2,12 +2,14 @@ services:
   postgres_academy:
     image: postgres:15.4
     container_name: postgres_academy
+    env_file:
+      - .env
     networks:
       - academy_network
     environment:
-      POSTGRES_USER: academyuser
-      POSTGRES_PASSWORD: academypass
-      POSTGRES_DB: academydb
+      POSTGRES_USER: ${POSTGRES_USER:-academyuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-academypass}
+      POSTGRES_DB: ${POSTGRES_DB:-academydb}
     volumes:
       - academy_pgdata:/var/lib/postgresql/data
     restart: always
@@ -15,18 +17,16 @@ services:
   django_academy:
     build: ./myAcademy
     container_name: django_academy
+    env_file:
+      - .env
     networks:
       - academy_network
     depends_on:
       - postgres_academy
-    environment:
-      POSTGRES_HOST: postgres_academy
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: academydb
-      POSTGRES_USER: academyuser
-      POSTGRES_PASSWORD: academypass
     volumes:
       - academy_static:/usr/src/app/staticfiles
+    expose:
+      - "8000"
     restart: always
 
   nginx_academy:

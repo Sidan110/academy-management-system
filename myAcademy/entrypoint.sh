@@ -21,7 +21,7 @@ for i in range(30):
             port=port,
             dbname=dbname,
             user=user,
-            password=password
+            password=password,
         )
         conn.close()
         print("PostgreSQL 연결 성공")
@@ -33,13 +33,16 @@ else:
     raise SystemExit("PostgreSQL 연결 실패")
 PY
 
-echo "Django 마이그레이션 실행..."
-python manage.py makemigrations academy
-python manage.py migrate
-python manage.py init_roles
+echo "Django 마이그레이션 적용..."
+python manage.py migrate --noinput
+
+if [ "$INIT_DEMO_ACCOUNTS" = "1" ]; then
+    echo "시연용 원장/교사 계정 생성 또는 확인..."
+    python manage.py init_roles
+fi
 
 echo "정적 파일 수집..."
 python manage.py collectstatic --noinput
 
 echo "Gunicorn 서버 실행..."
-gunicorn --bind 0.0.0.0:8000 academy_project.wsgi:application
+exec gunicorn --bind 0.0.0.0:8000 academy_project.wsgi:application

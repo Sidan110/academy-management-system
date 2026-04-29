@@ -1,4 +1,3 @@
-
 def role_flags(request):
     user = getattr(request, "user", None)
 

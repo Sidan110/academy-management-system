@@ -1,7 +1,12 @@
 .git
+.gitignore
 __pycache__
 *.pyc
 *.pyo
 *.pyd
 .env
+.env.local
 db.sqlite3
+.vscode
+.idea
+_backup_before_fix

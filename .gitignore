@@ -2,9 +2,19 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
 .env
+.env.local
+
 db.sqlite3
 .DS_Store
 .vscode/
 .idea/
+
 staticfiles/
+media/
+
+_backup_before_fix/
+
+# Local backup files
+*.bak
