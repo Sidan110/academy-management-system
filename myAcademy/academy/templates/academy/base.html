@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="ko">
@@ -7,48 +8,60 @@
     <link rel="stylesheet" href="{% static 'academy/styles.css' %}">
     <script defer src="{% static 'academy/scripts.js' %}"></script>
 </head>
-<body>
-    <div class="app-layout">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-icon">E</div>
-                <div>
-                    <div class="brand-title">EduManager</div>
-                    <div class="brand-subtitle">Academy System</div>
-                </div>
-            </div>
+<body class="service-body">
+<div class="service-shell">
+    <header class="service-topbar">
+        <div class="topbar-left">
+            <a class="service-logo" href="{% url 'dashboard' %}">
+                <span class="service-logo-mark">E</span>
+                <span>EduManager</span>
+            </a>
+        </div>
 
-            <nav class="menu">
-                <a href="{% url 'dashboard' %}">대시보드</a>
-                <a href="{% url 'student_list' %}">학생 관리</a>
-                <a href="{% url 'classroom_list' %}">수업반 관리</a>
-                <a href="{% url 'enrollment_list' %}">수강 등록</a>
-                <a href="{% url 'progress_list' %}">진도 기록</a>
-                <a href="{% url 'attendance_select' %}">출석 체크</a>
-                <a href="{% url 'attendance_report' %}">출석 현황</a>
-                <a href="{% url 'consultation_list' %}">방문상담 예약</a>
-            </nav>
-        </aside>
+        <nav class="top-menu">
+            <a href="{% url 'dashboard' %}">대시보드</a>
+            <a href="{% url 'student_list' %}">학생 관리</a>
+            <a href="{% url 'classroom_list' %}">수업반 관리</a>
 
-        <main class="main">
-            <header class="topbar">
-                <div>
-                    <h1>{% block page_title %}학원 관리 시스템{% endblock %}</h1>
-                    <p>{% block page_description %}학생, 수업, 진도, 출석 정보를 관리합니다.{% endblock %}</p>
-                </div>
-            </header>
-
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="message {{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            </div>
+            {% if is_owner %}
+            <a href="{% url 'enrollment_list' %}">수강 등록</a>
             {% endif %}
 
-            {% block content %}
-            {% endblock %}
-        </main>
-    </div>
+            <a href="{% url 'progress_list' %}">진도 기록</a>
+            <a href="{% url 'attendance_select' %}">출석 체크</a>
+            <a href="{% url 'attendance_report' %}">출석 현황</a>
+
+            {% if is_owner %}
+            <a href="{% url 'consultation_list' %}">상담 예약</a>
+            <a href="{% url 'notification_list' %}">알림 관리</a>
+            {% endif %}
+        </nav>
+
+        <div class="topbar-user">
+            <span class="role-chip">{{ role_label }}</span>
+            <span class="user-name">{{ request.user.username }}</span>
+            <a class="logout-link" href="{% url 'logout' %}">로그아웃</a>
+        </div>
+    </header>
+
+    <main class="service-main">
+        <section class="service-page-title">
+            <div>
+                <h1>{% block page_title %}대시보드{% endblock %}</h1>
+                <p>{% block page_description %}학원 운영 현황을 확인합니다.{% endblock %}</p>
+            </div>
+        </section>
+
+        {% if messages %}
+        <div class="message-area">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
 </body>
 </html>

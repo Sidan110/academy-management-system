@@ -106,3 +106,40 @@ class ConsultationReservationForm(BaseStyledForm):
             "purpose": forms.Textarea(attrs={"rows": 4}),
             "result_memo": forms.Textarea(attrs={"rows": 4}),
         }
+
+from .models import NotificationLog
+
+class PublicConsultationForm(BaseStyledForm):
+    class Meta:
+        model = ConsultationReservation
+        fields = [
+            "parent_name",
+            "student_name",
+            "school",
+            "grade",
+            "phone",
+            "preferred_date",
+            "preferred_time",
+            "purpose",
+        ]
+        widgets = {
+            "preferred_date": forms.DateInput(attrs={"type": "date"}),
+            "preferred_time": forms.TimeInput(attrs={"type": "time"}),
+            "purpose": forms.Textarea(attrs={"rows": 4}),
+        }
+
+
+class NotificationLogForm(BaseStyledForm):
+    class Meta:
+        model = NotificationLog
+        fields = [
+            "notification_type",
+            "category",
+            "recipient_name",
+            "phone",
+            "message",
+            "status",
+        ]
+        widgets = {
+            "message": forms.Textarea(attrs={"rows": 4}),
+        }

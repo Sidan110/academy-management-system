@@ -1,3 +1,8 @@
+from django.db.models import Q
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm
+from .models import NotificationLog
+from .forms import PublicConsultationForm, NotificationLogForm
 from datetime import datetime
 
 from django.contrib import messages
@@ -617,3 +622,162 @@ def attendance_report(request):
         "classrooms": classrooms,
         "status_options": status_options,
     })
+
+def user_is_owner(user):
+    return user.is_authenticated and (
+        user.is_superuser or user.groups.filter(name="Owner").exists()
+    )
+
+
+def make_notification_for_consultation(consultation, category, message, status="waiting"):
+    return NotificationLog.objects.create(
+        consultation=consultation,
+        notification_type="sms",
+        category=category,
+        recipient_name=consultation.parent_name,
+        phone=consultation.phone,
+        message=message,
+        status=status,
+    )
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST":
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, "로그인되었습니다.")
+            return redirect("dashboard")
+        messages.error(request, "아이디 또는 비밀번호가 올바르지 않습니다.")
+
+    return render(request, "academy/login.html", {
+        "form": form,
+    })
+
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, "로그아웃되었습니다.")
+    return redirect("login")
+
+
+def public_apply(request):
+    if request.method == "POST":
+        form = PublicConsultationForm(request.POST)
+        if form.is_valid():
+            consultation = form.save(commit=False)
+            consultation.status = "waiting"
+            consultation.save()
+
+            make_notification_for_consultation(
+                consultation,
+                "consultation_received",
+                f"[EduManager] {consultation.student_name} 학생의 방문상담 예약이 접수되었습니다. 희망일: {consultation.preferred_date} {consultation.preferred_time.strftime('%H:%M')}",
+            )
+
+            return redirect("public_apply_done")
+    else:
+        form = PublicConsultationForm()
+
+    return render(request, "academy/public_apply.html", {
+        "form": form,
+    })
+
+
+def public_apply_done(request):
+    return render(request, "academy/public_apply_done.html")
+
+
+def notification_list(request):
+    status = request.GET.get("status", "").strip()
+    category = request.GET.get("category", "").strip()
+    q = request.GET.get("q", "").strip()
+
+    notifications = NotificationLog.objects.select_related("consultation").all()
+
+    if status:
+        notifications = notifications.filter(status=status)
+
+    if category:
+        notifications = notifications.filter(category=category)
+
+    if q:
+        notifications = notifications.filter(
+            Q(recipient_name__icontains=q) |
+            Q(phone__icontains=q) |
+            Q(message__icontains=q)
+        )
+
+    counts = {
+        "waiting": NotificationLog.objects.filter(status="waiting").count(),
+        "sent": NotificationLog.objects.filter(status="sent").count(),
+        "failed": NotificationLog.objects.filter(status="failed").count(),
+    }
+
+    return render(request, "academy/notification_list.html", {
+        "notifications": notifications,
+        "status": status,
+        "category": category,
+        "q": q,
+        "counts": counts,
+    })
+
+
+@require_POST
+def notification_mark_sent(request, pk):
+    notification = get_object_or_404(NotificationLog, pk=pk)
+    notification.status = "sent"
+    notification.sent_at = timezone.now()
+    notification.save(update_fields=["status", "sent_at"])
+    messages.success(request, "알림을 발송 완료로 처리했습니다.")
+    return redirect("notification_list")
+
+
+@require_POST
+def notification_mark_failed(request, pk):
+    notification = get_object_or_404(NotificationLog, pk=pk)
+    notification.status = "failed"
+    notification.save(update_fields=["status"])
+    messages.success(request, "알림을 발송 실패로 처리했습니다.")
+    return redirect("notification_list")
+
+
+@require_POST
+def consultation_set_status(request, pk, status):
+    consultation = get_object_or_404(ConsultationReservation, pk=pk)
+
+    allowed = ["waiting", "scheduled", "completed", "canceled"]
+    if status not in allowed:
+        messages.error(request, "잘못된 상담 상태입니다.")
+        return redirect("consultation_detail", pk=consultation.pk)
+
+    consultation.status = status
+    consultation.save(update_fields=["status", "updated_at"])
+
+    category_map = {
+        "waiting": "consultation_received",
+        "scheduled": "consultation_scheduled",
+        "completed": "consultation_completed",
+        "canceled": "consultation_canceled",
+    }
+
+    message_map = {
+        "waiting": f"[EduManager] {consultation.student_name} 학생의 방문상담 예약이 접수되었습니다.",
+        "scheduled": f"[EduManager] {consultation.student_name} 학생의 방문상담 일정이 확정되었습니다. 희망일: {consultation.preferred_date} {consultation.preferred_time.strftime('%H:%M')}",
+        "completed": f"[EduManager] {consultation.student_name} 학생의 방문상담이 완료 처리되었습니다.",
+        "canceled": f"[EduManager] {consultation.student_name} 학생의 방문상담 예약이 취소 처리되었습니다.",
+    }
+
+    make_notification_for_consultation(
+        consultation,
+        category_map[status],
+        message_map[status],
+    )
+
+    messages.success(request, "상담 상태가 변경되었고 알림 발송 로그가 생성되었습니다.")
+    return redirect("consultation_detail", pk=consultation.pk)

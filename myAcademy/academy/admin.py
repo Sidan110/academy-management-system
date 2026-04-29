@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, ClassRoom, Enrollment, ProgressRecord, Attendance, ConsultationReservation
+from .models import Student, ClassRoom, Enrollment, ProgressRecord, Attendance, ConsultationReservation, NotificationLog
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -46,3 +46,19 @@ class ConsultationReservationAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "preferred_date", "grade")
     search_fields = ("parent_name", "student_name", "phone", "school")
+
+from .models import NotificationLog
+
+@admin.register(NotificationLog)
+class NotificationLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "notification_type",
+        "category",
+        "recipient_name",
+        "phone",
+        "status",
+        "sent_at",
+    )
+    list_filter = ("notification_type", "category", "status", "created_at")
+    search_fields = ("recipient_name", "phone", "message")

@@ -115,3 +115,61 @@ class ConsultationReservation(models.Model):
 
     def __str__(self):
         return f"{self.preferred_date} {self.student_name} 상담"
+
+class NotificationLog(models.Model):
+    TYPE_CHOICES = [
+        ("sms", "문자"),
+        ("alimtalk", "알림톡"),
+    ]
+
+    CATEGORY_CHOICES = [
+        ("consultation_received", "상담 예약 접수"),
+        ("consultation_scheduled", "상담 일정 확정"),
+        ("consultation_completed", "상담 완료"),
+        ("consultation_canceled", "상담 취소"),
+        ("attendance_notice", "출석 안내"),
+    ]
+
+    STATUS_CHOICES = [
+        ("waiting", "발송 대기"),
+        ("sent", "발송 완료"),
+        ("failed", "발송 실패"),
+    ]
+
+    consultation = models.ForeignKey(
+        ConsultationReservation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notifications",
+        verbose_name="관련 상담 예약"
+    )
+    notification_type = models.CharField(
+        "알림 유형",
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default="sms"
+    )
+    category = models.CharField(
+        "알림 분류",
+        max_length=40,
+        choices=CATEGORY_CHOICES,
+        default="consultation_received"
+    )
+    recipient_name = models.CharField("수신자", max_length=50)
+    phone = models.CharField("연락처", max_length=30)
+    message = models.TextField("발송 내용")
+    status = models.CharField(
+        "발송 상태",
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="waiting"
+    )
+    created_at = models.DateTimeField("생성일", auto_now_add=True)
+    sent_at = models.DateTimeField("발송 처리일", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.recipient_name} - {self.get_category_display()}"

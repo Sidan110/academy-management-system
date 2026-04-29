@@ -1,0 +1,25 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>상담 예약 완료</title>
+    <link rel="stylesheet" href="{% static 'academy/styles.css' %}">
+</head>
+<body class="auth-body">
+    <main class="auth-card">
+        <div class="login-logo">
+            <div class="login-mark success">✓</div>
+            <h1>예약이 접수되었습니다</h1>
+        </div>
+
+        <p class="done-text">
+            방문상담 예약 신청이 정상적으로 접수되었습니다.<br>
+            학원 담당자가 확인 후 연락드릴 예정입니다.
+        </p>
+
+        <a class="btn primary full" href="{% url 'login' %}">처음 화면으로</a>
+    </main>
+</body>
+</html>

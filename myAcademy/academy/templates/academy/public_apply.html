@@ -1,0 +1,39 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>방문상담 예약</title>
+    <link rel="stylesheet" href="{% static 'academy/styles.css' %}">
+</head>
+<body class="auth-body">
+    <main class="public-card">
+        <div class="login-logo">
+            <div class="login-mark">E</div>
+            <h1>방문상담 예약</h1>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-grid">
+                {% for field in form %}
+                <div class="form-group {% if field.name == 'purpose' %}wide{% endif %}">
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button class="btn primary big" type="submit">상담 예약 신청하기</button>
+                <a class="btn" href="{% url 'login' %}">로그인 화면으로</a>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

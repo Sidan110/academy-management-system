@@ -35,4 +35,13 @@ urlpatterns = [
     path('consultations/<int:pk>/edit/', views.consultation_update, name='consultation_update'),
     path('consultations/<int:pk>/status/<str:status>/', views.consultation_set_status, name='consultation_set_status'),
     path('consultations/<int:pk>/delete/', views.consultation_delete, name='consultation_delete'),
+
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('apply/', views.public_apply, name='public_apply'),
+    path('apply/done/', views.public_apply_done, name='public_apply_done'),
+
+    path('notifications/', views.notification_list, name='notification_list'),
+    path('notifications/<int:pk>/sent/', views.notification_mark_sent, name='notification_mark_sent'),
+    path('notifications/<int:pk>/failed/', views.notification_mark_failed, name='notification_mark_failed'),
 ]
