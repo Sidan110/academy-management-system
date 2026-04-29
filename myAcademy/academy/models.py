@@ -83,3 +83,35 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.student.name} {self.get_status_display()}"
+
+class ConsultationReservation(models.Model):
+    STATUS_CHOICES = [
+        ("waiting", "예약 접수"),
+        ("scheduled", "상담 예정"),
+        ("completed", "상담 완료"),
+        ("canceled", "취소"),
+    ]
+
+    parent_name = models.CharField("학부모 이름", max_length=50)
+    student_name = models.CharField("학생 이름", max_length=50)
+    school = models.CharField("학교", max_length=100, blank=True)
+    grade = models.CharField("학년", max_length=20, blank=True)
+    phone = models.CharField("연락처", max_length=30)
+    preferred_date = models.DateField("희망 상담 날짜")
+    preferred_time = models.TimeField("희망 상담 시간")
+    purpose = models.TextField("상담 목적")
+    status = models.CharField(
+        "상담 상태",
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="waiting"
+    )
+    result_memo = models.TextField("상담 결과 메모", blank=True)
+    created_at = models.DateTimeField("신청일", auto_now_add=True)
+    updated_at = models.DateTimeField("수정일", auto_now=True)
+
+    class Meta:
+        ordering = ["preferred_date", "preferred_time", "-created_at"]
+
+    def __str__(self):
+        return f"{self.preferred_date} {self.student_name} 상담"

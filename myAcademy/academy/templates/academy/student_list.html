@@ -1,8 +1,9 @@
+
 {% extends 'academy/base.html' %}
 
 {% block title %}학생 관리{% endblock %}
 {% block page_title %}학생 관리{% endblock %}
-{% block page_description %}학생 정보를 등록하고 조회합니다.{% endblock %}
+{% block page_description %}학교, 학년, 수업반, 정렬 기준으로 학생을 검색하고 관리합니다.{% endblock %}
 
 {% block content %}
 <section class="card">
@@ -11,9 +12,60 @@
         <a class="btn primary" href="{% url 'student_create' %}">학생 등록</a>
     </div>
 
-    <form class="search-bar" method="get">
-        <input type="text" name="q" value="{{ q }}" placeholder="학생명, 학교, 학년, 학부모 연락처 검색">
-        <button class="btn" type="submit">검색</button>
+    <form class="filter-panel" method="get">
+        <div class="filter-grid">
+            <div class="form-group">
+                <label>통합 검색</label>
+                <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="학생명, 학교, 학년, 연락처">
+            </div>
+
+            <div class="form-group">
+                <label>학교</label>
+                <select class="form-control" name="school">
+                    <option value="">전체 학교</option>
+                    {% for item in school_options %}
+                    <option value="{{ item }}" {% if school == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>학년</label>
+                <select class="form-control" name="grade">
+                    <option value="">전체 학년</option>
+                    {% for item in grade_options %}
+                    <option value="{{ item }}" {% if grade == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>수업반</label>
+                <select class="form-control" name="classroom">
+                    <option value="">전체 수업반</option>
+                    {% for classroom in classrooms %}
+                    <option value="{{ classroom.id }}" {% if classroom_id == classroom.id|stringformat:"s" %}selected{% endif %}>
+                        {{ classroom.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>정렬</label>
+                <select class="form-control" name="sort">
+                    <option value="name" {% if sort == "name" %}selected{% endif %}>이름순</option>
+                    <option value="school" {% if sort == "school" %}selected{% endif %}>학교순</option>
+                    <option value="grade" {% if sort == "grade" %}selected{% endif %}>학년순</option>
+                    <option value="recent" {% if sort == "recent" %}selected{% endif %}>최근 등록순</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions compact">
+            <button class="btn primary" type="submit">검색/필터 적용</button>
+            <a class="btn" href="{% url 'student_list' %}">초기화</a>
+        </div>
     </form>
 
     <div class="table-wrap">
@@ -23,6 +75,7 @@
                     <th>학생명</th>
                     <th>학교</th>
                     <th>학년</th>
+                    <th>수강 수업</th>
                     <th>학부모 연락처</th>
                     <th>등록일</th>
                 </tr>
@@ -37,12 +90,19 @@
                     </td>
                     <td>{{ student.school|default:"-" }}</td>
                     <td>{{ student.grade|default:"-" }}</td>
+                    <td>
+                        {% for enrollment in student.enrollments.all %}
+                        <span class="tag">{{ enrollment.classroom.name }}</span>
+                        {% empty %}
+                        <span class="muted">미배정</span>
+                        {% endfor %}
+                    </td>
                     <td>{{ student.parent_phone|default:"-" }}</td>
                     <td>{{ student.created_at|date:"Y-m-d" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="empty">학생 정보가 없습니다.</td>
+                    <td colspan="6" class="empty">조건에 맞는 학생이 없습니다.</td>
                 </tr>
                 {% endfor %}
             </tbody>

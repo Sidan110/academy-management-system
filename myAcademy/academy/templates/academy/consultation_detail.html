@@ -1,0 +1,81 @@
+
+{% extends 'academy/base.html' %}
+
+{% block title %}방문상담 상세{% endblock %}
+{% block page_title %}방문상담 상세{% endblock %}
+{% block page_description %}상담 신청 내용과 처리 상태를 확인합니다.{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="section-header">
+        <h2>{{ consultation.student_name }} 상담 예약</h2>
+        <span class="status-badge {{ consultation.status }}">{{ consultation.get_status_display }}</span>
+    </div>
+
+    <div class="info-grid">
+        <div>
+            <label>학생 이름</label>
+            <div class="info-box">{{ consultation.student_name }}</div>
+        </div>
+        <div>
+            <label>학부모 이름</label>
+            <div class="info-box">{{ consultation.parent_name }}</div>
+        </div>
+        <div>
+            <label>학교</label>
+            <div class="info-box">{{ consultation.school|default:"-" }}</div>
+        </div>
+        <div>
+            <label>학년</label>
+            <div class="info-box">{{ consultation.grade|default:"-" }}</div>
+        </div>
+        <div>
+            <label>연락처</label>
+            <div class="info-box">{{ consultation.phone }}</div>
+        </div>
+        <div>
+            <label>희망 상담 일시</label>
+            <div class="info-box">{{ consultation.preferred_date }} {{ consultation.preferred_time|time:"H:i" }}</div>
+        </div>
+        <div class="wide">
+            <label>상담 목적</label>
+            <div class="info-box memo">{{ consultation.purpose|linebreaksbr }}</div>
+        </div>
+        <div class="wide">
+            <label>상담 결과 메모</label>
+            <div class="info-box memo">{{ consultation.result_memo|default:"작성된 상담 결과가 없습니다."|linebreaksbr }}</div>
+        </div>
+    </div>
+
+    <div class="form-actions wrap">
+        <a class="btn primary" href="{% url 'consultation_update' consultation.pk %}">예약 수정</a>
+
+        <form method="post" action="{% url 'consultation_set_status' consultation.pk 'waiting' %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn" type="submit">예약 접수</button>
+        </form>
+
+        <form method="post" action="{% url 'consultation_set_status' consultation.pk 'scheduled' %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn" type="submit">상담 예정</button>
+        </form>
+
+        <form method="post" action="{% url 'consultation_set_status' consultation.pk 'completed' %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn primary" type="submit">상담 완료</button>
+        </form>
+
+        <form method="post" action="{% url 'consultation_set_status' consultation.pk 'canceled' %}" class="inline-form">
+            {% csrf_token %}
+            <button class="btn danger" type="submit">취소</button>
+        </form>
+
+        <form method="post" action="{% url 'consultation_delete' consultation.pk %}" class="inline-form js-confirm">
+            {% csrf_token %}
+            <button class="btn danger" type="submit">삭제</button>
+        </form>
+
+        <a class="btn" href="{% url 'consultation_list' %}">목록으로</a>
+    </div>
+</section>
+{% endblock %}

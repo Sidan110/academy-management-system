@@ -26,4 +26,13 @@ urlpatterns = [
 
     path('attendance/', views.attendance_select, name='attendance_select'),
     path('attendance/<int:classroom_id>/', views.attendance_check, name='attendance_check'),
+
+    path('attendance/report/', views.attendance_report, name='attendance_report'),
+
+    path('consultations/', views.consultation_list, name='consultation_list'),
+    path('consultations/new/', views.consultation_create, name='consultation_create'),
+    path('consultations/<int:pk>/', views.consultation_detail, name='consultation_detail'),
+    path('consultations/<int:pk>/edit/', views.consultation_update, name='consultation_update'),
+    path('consultations/<int:pk>/status/<str:status>/', views.consultation_set_status, name='consultation_set_status'),
+    path('consultations/<int:pk>/delete/', views.consultation_delete, name='consultation_delete'),
 ]

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Student, ClassRoom, Enrollment, ProgressRecord
+from .models import Student, ClassRoom, Enrollment, ProgressRecord, ConsultationReservation
 
 class BaseStyledForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -83,4 +83,26 @@ class ProgressRecordForm(BaseStyledForm):
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'memo': forms.Textarea(attrs={'rows': 4}),
+        }
+
+class ConsultationReservationForm(BaseStyledForm):
+    class Meta:
+        model = ConsultationReservation
+        fields = [
+            "parent_name",
+            "student_name",
+            "school",
+            "grade",
+            "phone",
+            "preferred_date",
+            "preferred_time",
+            "purpose",
+            "status",
+            "result_memo",
+        ]
+        widgets = {
+            "preferred_date": forms.DateInput(attrs={"type": "date"}),
+            "preferred_time": forms.TimeInput(attrs={"type": "time"}),
+            "purpose": forms.Textarea(attrs={"rows": 4}),
+            "result_memo": forms.Textarea(attrs={"rows": 4}),
         }

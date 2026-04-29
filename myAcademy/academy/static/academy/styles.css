@@ -733,3 +733,107 @@ textarea.form-control {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* ===== Upgrade: consultation, report, advanced filter ===== */
+.wide-stats {
+    grid-template-columns: repeat(6, 1fr);
+}
+
+.consultation-stats {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-card.highlight strong {
+    color: #7c3aed;
+}
+
+.stat-card.warning strong {
+    color: #f97316;
+}
+
+.filter-panel {
+    background: #f8fafc;
+    border: 1px solid #dbe5f3;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+}
+
+.filter-grid.three {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+.form-actions.compact {
+    margin-top: 14px;
+}
+
+.form-actions.wrap {
+    flex-wrap: wrap;
+}
+
+.tag {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 999px;
+    padding: 5px 9px;
+    margin: 2px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.muted {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.status-badge.waiting {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-badge.scheduled {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.status-badge.completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge.canceled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-badge.unchecked {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+@media (max-width: 1280px) {
+    .wide-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 780px) {
+    .wide-stats,
+    .consultation-stats,
+    .filter-grid,
+    .filter-grid.three {
+        grid-template-columns: 1fr;
+    }
+}

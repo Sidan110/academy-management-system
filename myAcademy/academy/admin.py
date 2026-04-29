@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, ClassRoom, Enrollment, ProgressRecord, Attendance
+from .models import Student, ClassRoom, Enrollment, ProgressRecord, Attendance, ConsultationReservation
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -31,3 +31,18 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_display = ('date', 'student', 'classroom', 'status', 'note')
     list_filter = ('date', 'classroom', 'status')
     search_fields = ('student__name', 'classroom__name')
+
+@admin.register(ConsultationReservation)
+class ConsultationReservationAdmin(admin.ModelAdmin):
+    list_display = (
+        "preferred_date",
+        "preferred_time",
+        "parent_name",
+        "student_name",
+        "grade",
+        "phone",
+        "status",
+        "created_at",
+    )
+    list_filter = ("status", "preferred_date", "grade")
+    search_fields = ("parent_name", "student_name", "phone", "school")

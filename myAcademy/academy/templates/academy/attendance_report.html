@@ -1,0 +1,115 @@
+
+{% extends 'academy/base.html' %}
+
+{% block title %}출석 현황{% endblock %}
+{% block page_title %}출석 현황{% endblock %}
+{% block page_description %}날짜, 수업반, 학생명, 출석 상태별로 출석 결과와 미체크 학생을 확인합니다.{% endblock %}
+
+{% block content %}
+<section class="stat-grid consultation-stats">
+    <div class="stat-card">
+        <span>출석</span>
+        <strong>{{ counts.present }}</strong>
+        <p>정상 출석</p>
+    </div>
+    <div class="stat-card">
+        <span>결석</span>
+        <strong>{{ counts.absent }}</strong>
+        <p>결석 처리</p>
+    </div>
+    <div class="stat-card">
+        <span>지각</span>
+        <strong>{{ counts.late }}</strong>
+        <p>지각 처리</p>
+    </div>
+    <div class="stat-card warning">
+        <span>미체크</span>
+        <strong>{{ counts.unchecked }}</strong>
+        <p>출석 확인 필요</p>
+    </div>
+</section>
+
+<section class="card">
+    <div class="section-header">
+        <h2>{{ selected_date }} 출석 현황</h2>
+        <a class="btn primary" href="{% url 'attendance_select' %}">출석 체크하기</a>
+    </div>
+
+    <form class="filter-panel" method="get">
+        <div class="filter-grid">
+            <div class="form-group">
+                <label>날짜</label>
+                <input class="form-control" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            </div>
+
+            <div class="form-group">
+                <label>수업반</label>
+                <select class="form-control" name="classroom">
+                    <option value="">전체 수업반</option>
+                    {% for classroom in classrooms %}
+                    <option value="{{ classroom.id }}" {% if classroom_id == classroom.id|stringformat:"s" %}selected{% endif %}>
+                        {{ classroom.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>학생 검색</label>
+                <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="학생명, 학교, 학년">
+            </div>
+
+            <div class="form-group">
+                <label>상태</label>
+                <select class="form-control" name="status">
+                    {% for value, label in status_options %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions compact">
+            <button class="btn primary" type="submit">조회</button>
+            <a class="btn" href="{% url 'attendance_report' %}">초기화</a>
+        </div>
+    </form>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>수업반</th>
+                    <th>학생명</th>
+                    <th>학교</th>
+                    <th>학년</th>
+                    <th>상태</th>
+                    <th>비고</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.date }}</td>
+                    <td>{{ row.classroom.name }}</td>
+                    <td>
+                        <a class="table-link" href="{% url 'student_detail' row.student.pk %}">
+                            {{ row.student.name }}
+                        </a>
+                    </td>
+                    <td>{{ row.student.school|default:"-" }}</td>
+                    <td>{{ row.student.grade|default:"-" }}</td>
+                    <td><span class="status-badge {{ row.status }}">{{ row.status_display }}</span></td>
+                    <td>{{ row.note|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty">조건에 맞는 출석 현황이 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

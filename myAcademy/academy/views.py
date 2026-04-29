@@ -7,8 +7,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .models import Student, ClassRoom, Enrollment, ProgressRecord, Attendance
-from .forms import StudentForm, ClassRoomForm, EnrollmentForm, ProgressRecordForm
+from .models import Student, ClassRoom, Enrollment, ProgressRecord, Attendance, ConsultationReservation
+from .forms import StudentForm, ClassRoomForm, EnrollmentForm, ProgressRecordForm, ConsultationReservationForm
+
 
 
 def dashboard(request):
@@ -19,43 +20,98 @@ def dashboard(request):
     enrollment_count = Enrollment.objects.count()
     progress_count = ProgressRecord.objects.count()
 
-    recent_students = Student.objects.order_by('-created_at')[:5]
+    waiting_consultation_count = ConsultationReservation.objects.filter(
+        status__in=["waiting", "scheduled"]
+    ).count()
+    completed_consultation_count = ConsultationReservation.objects.filter(
+        status="completed"
+    ).count()
+
+    total_enrollments = Enrollment.objects.count()
+    checked_today_count = Attendance.objects.filter(date=today).count()
+    unchecked_today_count = max(total_enrollments - checked_today_count, 0)
+
+    recent_students = Student.objects.order_by("-created_at")[:5]
     recent_progress = ProgressRecord.objects.select_related(
-        'student',
-        'classroom'
-    ).order_by('-created_at')[:5]
+        "student",
+        "classroom"
+    ).order_by("-created_at")[:5]
 
-    today_attendance_count = Attendance.objects.filter(date=today).count()
+    recent_consultations = ConsultationReservation.objects.order_by(
+        "-created_at"
+    )[:5]
 
-    return render(request, 'academy/dashboard.html', {
-        'student_count': student_count,
-        'classroom_count': classroom_count,
-        'enrollment_count': enrollment_count,
-        'progress_count': progress_count,
-        'today_attendance_count': today_attendance_count,
-        'recent_students': recent_students,
-        'recent_progress': recent_progress,
-        'today': today,
+    return render(request, "academy/dashboard.html", {
+        "student_count": student_count,
+        "classroom_count": classroom_count,
+        "enrollment_count": enrollment_count,
+        "progress_count": progress_count,
+        "waiting_consultation_count": waiting_consultation_count,
+        "completed_consultation_count": completed_consultation_count,
+        "unchecked_today_count": unchecked_today_count,
+        "recent_students": recent_students,
+        "recent_progress": recent_progress,
+        "recent_consultations": recent_consultations,
+        "today": today,
     })
 
 
 def student_list(request):
-    q = request.GET.get('q', '').strip()
-    students = Student.objects.all()
+    q = request.GET.get("q", "").strip()
+    school = request.GET.get("school", "").strip()
+    grade = request.GET.get("grade", "").strip()
+    classroom_id = request.GET.get("classroom", "").strip()
+    sort = request.GET.get("sort", "name").strip()
+
+    students = Student.objects.prefetch_related("enrollments__classroom").all()
 
     if q:
         students = students.filter(
             Q(name__icontains=q) |
             Q(school__icontains=q) |
             Q(grade__icontains=q) |
-            Q(parent_phone__icontains=q)
+            Q(parent_phone__icontains=q) |
+            Q(phone__icontains=q)
         )
 
-    return render(request, 'academy/student_list.html', {
-        'students': students,
-        'q': q,
-    })
+    if school:
+        students = students.filter(school=school)
 
+    if grade:
+        students = students.filter(grade=grade)
+
+    if classroom_id:
+        students = students.filter(enrollments__classroom_id=classroom_id)
+
+    sort_map = {
+        "name": "name",
+        "school": "school",
+        "grade": "grade",
+        "recent": "-created_at",
+    }
+    students = students.order_by(sort_map.get(sort, "name")).distinct()
+
+    school_options = Student.objects.exclude(
+        school=""
+    ).values_list("school", flat=True).distinct().order_by("school")
+
+    grade_options = Student.objects.exclude(
+        grade=""
+    ).values_list("grade", flat=True).distinct().order_by("grade")
+
+    classrooms = ClassRoom.objects.all().order_by("name")
+
+    return render(request, "academy/student_list.html", {
+        "students": students,
+        "q": q,
+        "school": school,
+        "grade": grade,
+        "classroom_id": classroom_id,
+        "sort": sort,
+        "school_options": school_options,
+        "grade_options": grade_options,
+        "classrooms": classrooms,
+    })
 
 def student_detail(request, pk):
     student = get_object_or_404(Student, pk=pk)
@@ -370,4 +426,194 @@ def attendance_check(request, classroom_id):
         'rows': rows,
         'counts': counts,
         'total_count': len(rows),
+    })
+
+def consultation_list(request):
+    status = request.GET.get("status", "").strip()
+    q = request.GET.get("q", "").strip()
+
+    consultations = ConsultationReservation.objects.all()
+
+    if status:
+        consultations = consultations.filter(status=status)
+
+    if q:
+        consultations = consultations.filter(
+            Q(parent_name__icontains=q) |
+            Q(student_name__icontains=q) |
+            Q(phone__icontains=q) |
+            Q(school__icontains=q)
+        )
+
+    counts = {
+        "waiting": ConsultationReservation.objects.filter(status="waiting").count(),
+        "scheduled": ConsultationReservation.objects.filter(status="scheduled").count(),
+        "completed": ConsultationReservation.objects.filter(status="completed").count(),
+        "canceled": ConsultationReservation.objects.filter(status="canceled").count(),
+    }
+
+    return render(request, "academy/consultation_list.html", {
+        "consultations": consultations,
+        "status": status,
+        "q": q,
+        "counts": counts,
+    })
+
+
+def consultation_create(request):
+    if request.method == "POST":
+        form = ConsultationReservationForm(request.POST)
+        if form.is_valid():
+            consultation = form.save()
+            messages.success(request, "방문상담 예약이 등록되었습니다.")
+            return redirect("consultation_detail", pk=consultation.pk)
+    else:
+        form = ConsultationReservationForm()
+
+    return render(request, "academy/consultation_form.html", {
+        "form": form,
+        "title": "방문상담 예약 등록",
+        "button_text": "예약 저장하기",
+    })
+
+
+def consultation_detail(request, pk):
+    consultation = get_object_or_404(ConsultationReservation, pk=pk)
+
+    return render(request, "academy/consultation_detail.html", {
+        "consultation": consultation,
+    })
+
+
+def consultation_update(request, pk):
+    consultation = get_object_or_404(ConsultationReservation, pk=pk)
+
+    if request.method == "POST":
+        form = ConsultationReservationForm(request.POST, instance=consultation)
+        if form.is_valid():
+            consultation = form.save()
+            messages.success(request, "방문상담 예약 정보가 수정되었습니다.")
+            return redirect("consultation_detail", pk=consultation.pk)
+    else:
+        form = ConsultationReservationForm(instance=consultation)
+
+    return render(request, "academy/consultation_form.html", {
+        "form": form,
+        "title": "방문상담 예약 수정",
+        "button_text": "수정하기",
+    })
+
+
+@require_POST
+def consultation_set_status(request, pk, status):
+    consultation = get_object_or_404(ConsultationReservation, pk=pk)
+
+    allowed = ["waiting", "scheduled", "completed", "canceled"]
+    if status not in allowed:
+        messages.error(request, "잘못된 상담 상태입니다.")
+        return redirect("consultation_detail", pk=consultation.pk)
+
+    consultation.status = status
+    consultation.save(update_fields=["status", "updated_at"])
+    messages.success(request, "상담 상태가 변경되었습니다.")
+    return redirect("consultation_detail", pk=consultation.pk)
+
+
+@require_POST
+def consultation_delete(request, pk):
+    consultation = get_object_or_404(ConsultationReservation, pk=pk)
+    consultation.delete()
+    messages.success(request, "방문상담 예약이 삭제되었습니다.")
+    return redirect("consultation_list")
+
+
+def attendance_report(request):
+    selected_date = parse_date_or_today(request.GET.get("date"))
+    classroom_id = request.GET.get("classroom", "").strip()
+    q = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+
+    enrollments = Enrollment.objects.select_related(
+        "student",
+        "classroom"
+    ).order_by("classroom__name", "student__name")
+
+    if classroom_id:
+        enrollments = enrollments.filter(classroom_id=classroom_id)
+
+    if q:
+        enrollments = enrollments.filter(
+            Q(student__name__icontains=q) |
+            Q(student__school__icontains=q) |
+            Q(student__grade__icontains=q)
+        )
+
+    attendance_qs = Attendance.objects.filter(date=selected_date)
+    if classroom_id:
+        attendance_qs = attendance_qs.filter(classroom_id=classroom_id)
+
+    existing = {
+        (attendance.student_id, attendance.classroom_id): attendance
+        for attendance in attendance_qs
+    }
+
+    status_labels = dict(Attendance.STATUS_CHOICES)
+    status_labels["unchecked"] = "미체크"
+
+    counts = {
+        "present": 0,
+        "absent": 0,
+        "late": 0,
+        "early": 0,
+        "makeup": 0,
+        "unchecked": 0,
+    }
+
+    rows = []
+
+    for enrollment in enrollments:
+        key = (enrollment.student_id, enrollment.classroom_id)
+        attendance = existing.get(key)
+
+        if attendance:
+            status = attendance.status
+            note = attendance.note
+        else:
+            status = "unchecked"
+            note = ""
+
+        counts[status] += 1
+
+        if status_filter and status != status_filter:
+            continue
+
+        rows.append({
+            "student": enrollment.student,
+            "classroom": enrollment.classroom,
+            "date": selected_date,
+            "status": status,
+            "status_display": status_labels.get(status, status),
+            "note": note,
+        })
+
+    classrooms = ClassRoom.objects.all().order_by("name")
+    status_options = [
+        ("", "전체"),
+        ("present", "출석"),
+        ("absent", "결석"),
+        ("late", "지각"),
+        ("early", "조퇴"),
+        ("makeup", "보강"),
+        ("unchecked", "미체크"),
+    ]
+
+    return render(request, "academy/attendance_report.html", {
+        "selected_date": selected_date,
+        "classroom_id": classroom_id,
+        "q": q,
+        "status_filter": status_filter,
+        "rows": rows,
+        "counts": counts,
+        "classrooms": classrooms,
+        "status_options": status_options,
     })

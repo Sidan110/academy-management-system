@@ -1,11 +1,12 @@
+
 {% extends 'academy/base.html' %}
 
 {% block title %}대시보드{% endblock %}
 {% block page_title %}대시보드{% endblock %}
-{% block page_description %}학원 운영 현황을 한눈에 확인합니다.{% endblock %}
+{% block page_description %}오늘의 학원 운영 현황과 처리해야 할 업무를 한눈에 확인합니다.{% endblock %}
 
 {% block content %}
-<section class="stat-grid">
+<section class="stat-grid wide-stats">
     <div class="stat-card">
         <span>전체 학생</span>
         <strong>{{ student_count }}</strong>
@@ -26,6 +27,16 @@
         <strong>{{ progress_count }}</strong>
         <p>누적 진도 기록</p>
     </div>
+    <div class="stat-card highlight">
+        <span>상담 대기</span>
+        <strong>{{ waiting_consultation_count }}</strong>
+        <p>예약 접수/상담 예정</p>
+    </div>
+    <div class="stat-card warning">
+        <span>오늘 미체크</span>
+        <strong>{{ unchecked_today_count }}</strong>
+        <p>출석 확인 필요</p>
+    </div>
 </section>
 
 <section class="quick-actions">
@@ -34,6 +45,8 @@
     <a class="btn primary" href="{% url 'enrollment_create' %}">수강 등록</a>
     <a class="btn primary" href="{% url 'progress_create' %}">진도 작성</a>
     <a class="btn primary" href="{% url 'attendance_select' %}">출석 체크</a>
+    <a class="btn primary" href="{% url 'attendance_report' %}">출석 현황</a>
+    <a class="btn primary" href="{% url 'consultation_create' %}">상담 예약</a>
 </section>
 
 <div class="two-column">
@@ -60,23 +73,44 @@
 
     <section class="card">
         <div class="section-header">
-            <h2>최근 진도 기록</h2>
-            <a href="{% url 'progress_list' %}">전체 보기</a>
+            <h2>최근 방문상담 예약</h2>
+            <a href="{% url 'consultation_list' %}">전체 보기</a>
         </div>
 
         <div class="list-stack">
-            {% for record in recent_progress %}
-            <div class="mini-row">
-                <div class="badge">진도</div>
+            {% for consultation in recent_consultations %}
+            <a class="mini-row" href="{% url 'consultation_detail' consultation.pk %}">
+                <div class="badge">상담</div>
                 <div>
-                    <strong>{{ record.student.name }} - {{ record.topic }}</strong>
-                    <p>{{ record.classroom.name }} · {{ record.date }}</p>
+                    <strong>{{ consultation.student_name }} / {{ consultation.parent_name }}</strong>
+                    <p>{{ consultation.preferred_date }} {{ consultation.preferred_time|time:"H:i" }} · {{ consultation.get_status_display }}</p>
                 </div>
-            </div>
+            </a>
             {% empty %}
-            <p class="empty">아직 진도 기록이 없습니다.</p>
+            <p class="empty">방문상담 예약이 없습니다.</p>
             {% endfor %}
         </div>
     </section>
 </div>
+
+<section class="card">
+    <div class="section-header">
+        <h2>최근 진도 기록</h2>
+        <a href="{% url 'progress_list' %}">전체 보기</a>
+    </div>
+
+    <div class="list-stack">
+        {% for record in recent_progress %}
+        <div class="mini-row">
+            <div class="badge">진도</div>
+            <div>
+                <strong>{{ record.student.name }} - {{ record.topic }}</strong>
+                <p>{{ record.classroom.name }} · {{ record.date }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <p class="empty">아직 진도 기록이 없습니다.</p>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

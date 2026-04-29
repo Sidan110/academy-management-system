@@ -1,0 +1,35 @@
+
+{% extends 'academy/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_description %}학부모 방문상담 신청 정보를 입력합니다.{% endblock %}
+
+{% block content %}
+<section class="card form-card">
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="form-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'purpose' or field.name == 'result_memo' %}wide{% endif %}">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                <p class="field-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button class="btn primary big" type="submit">{{ button_text }}</button>
+            <a class="btn" href="{% url 'consultation_list' %}">목록으로</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
